@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 import java.util.NoSuchElementException;
 
@@ -23,6 +24,12 @@ public class ControllerExceptionHandler {
     public ErrorResponse optimisticLock (OptimisticLockException e) {
         return ErrorResponse.create(e, HttpStatus.CONFLICT, "Stock has changed in the meantime, please try again");
     }
+
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ErrorResponse handleValidationExceptions(HandlerMethodValidationException e) {
+        return ErrorResponse.create(e, HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
 
     @ExceptionHandler(Exception.class)
     public ErrorResponse generic(Exception e) {

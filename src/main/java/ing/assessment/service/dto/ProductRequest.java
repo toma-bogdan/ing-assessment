@@ -1,12 +1,15 @@
 package ing.assessment.service.dto;
 
 import ing.assessment.db.product.ProductCK;
-import lombok.Getter;
-import lombok.Setter;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import lombok.Data;
 
-@Getter
-@Setter
+@Data
 public class ProductRequest {
+    @Valid
     private ProductCK productCK;
+
+    @NotNull
     private Integer quantity;
 }

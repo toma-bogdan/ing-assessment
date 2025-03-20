@@ -5,8 +5,8 @@ import ing.assessment.db.order.OrderProduct;
 import ing.assessment.db.product.Product;
 import ing.assessment.db.repository.OrderRepository;
 import ing.assessment.db.repository.ProductRepository;
-import ing.assessment.model.Location;
 import ing.assessment.service.OrderService;
+import ing.assessment.service.dto.OrderResponse;
 import ing.assessment.service.dto.ProductRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,56 +21,74 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
 
-    private void computeOrderCost(Order order) {
-        if (order.getOrderCost() > 1000) {
-            order.setDeliveryCost(0);
-            double discount = order.getOrderCost() * 0.1;
-            order.setOrderCost(order.getOrderCost() - discount);
-        } else if (order.getOrderCost() > 500) {
-            order.setDeliveryCost(0);
-        }
-    }
-
-    private int computeDeliveryTime(List<ProductRequest> productRequests) {
-        // Use a Set to store unique locations
-        Set<Location> uniqueLocations = new HashSet<>();
-
-        productRequests.forEach(request ->
-                uniqueLocations.add(request.getProductCK().getLocation()));
-
-        // Delivery time: 2 days for each location
-        return uniqueLocations.size() * 2;
-    }
-
-
+    private static final double FREE_DELIVERY_ORDER = 500.0;
+    private static final double MINIMUM_DISCOUNT_ORDER = 1000.0;
+    private static final double DISCOUNT_RATE = 0.1;
 
     @Override
     @Transactional
-    public void placeOrder(List<ProductRequest> productRequests) {
+    public OrderResponse placeOrder(List<ProductRequest> productRequests) {
         Order order = new Order();
         List<OrderProduct> orderProducts = new ArrayList<>();
         double orderCost = 0;
+
         for (ProductRequest productRequest : productRequests) {
-            Product product = productRepository
-                    .findByProductCk(productRequest.getProductCK())
-                    .orElseThrow(() -> new NoSuchElementException("Product not found for ProductCK: "
-                            + productRequest.getProductCK()));
-
-            if (product.getQuantity() < productRequest.getQuantity()){
-                throw new IllegalArgumentException("Stock quantity is less than requested quantity for ProductCK:"
-                        + productRequest.getProductCK());
-            }
-            product.setQuantity(product.getQuantity() - productRequest.getQuantity());
-            productRepository.save(product);
-
-            orderCost += product.getPrice() * productRequest.getQuantity();
-            orderProducts.add(new OrderProduct(productRequest.getProductCK().getId(), productRequest.getQuantity()));
+            Product product = fetchAndValidateProduct(productRequest);
+            updateProductStock(product, productRequest);
+            orderCost += calculateProductCost(product, productRequest.getQuantity());
+            orderProducts.add(createOrderProduct(productRequest));
         }
+
         order.setOrderCost(orderCost);
         order.setOrderProducts(orderProducts);
         order.setDeliveryTime(computeDeliveryTime(productRequests));
         computeOrderCost(order);
         order.setTimestamp(new Date());
         orderRepository.save(order);
+
+        return new OrderResponse(order.getOrderCost() + order.getDeliveryCost(), order.getDeliveryTime());
+    }
+
+    private void computeOrderCost(Order order) {
+        if (order.getOrderCost() > MINIMUM_DISCOUNT_ORDER) {
+            order.setDeliveryCost(0);
+            order.setOrderCost(order.getOrderCost() * (1 - DISCOUNT_RATE));
+        } else if (order.getOrderCost() > FREE_DELIVERY_ORDER) {
+            order.setDeliveryCost(0);
+        }
+    }
+
+    private int computeDeliveryTime(List<ProductRequest> productRequests) {
+        // Delivery time: 2 days for each unique location
+        return (int) productRequests.stream()
+                .map(request -> request.getProductCK().getLocation())
+                .distinct()
+                .count() * 2;
+    }
+
+
+    private Product fetchAndValidateProduct(ProductRequest productRequest) {
+        Product product = productRepository.findByProductCk(productRequest.getProductCK())
+                .orElseThrow(() -> new NoSuchElementException("Product not found for ProductCK: "
+                        + productRequest.getProductCK()));
+
+        if (product.getQuantity() < productRequest.getQuantity()) {
+            throw new IllegalArgumentException("Stock quantity is less than requested quantity for ProductCK: "
+                    + productRequest.getProductCK());
+        }
+        return product;
+    }
+
+    private void updateProductStock(Product product, ProductRequest productRequest) {
+        product.setQuantity(product.getQuantity() - productRequest.getQuantity());
+        productRepository.save(product);
+    }
+
+    private double calculateProductCost(Product product, int quantity) {
+        return product.getPrice() * quantity;
+    }
+
+    private OrderProduct createOrderProduct(ProductRequest productRequest) {
+        return new OrderProduct(productRequest.getProductCK().getId(), productRequest.getQuantity());
     }
 }
