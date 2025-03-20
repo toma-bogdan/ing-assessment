@@ -35,7 +35,7 @@ public class OrderServiceImpl implements OrderService {
         for (ProductRequest productRequest : productRequests) {
             Product product = fetchAndValidateProduct(productRequest);
             updateProductStock(product, productRequest);
-            orderCost += calculateProductCost(product, productRequest.getQuantity());
+            orderCost += product.getPrice() * productRequest.getQuantity();
             orderProducts.add(createOrderProduct(productRequest));
         }
 
@@ -43,7 +43,6 @@ public class OrderServiceImpl implements OrderService {
         order.setOrderProducts(orderProducts);
         order.setDeliveryTime(computeDeliveryTime(productRequests));
         computeOrderCost(order);
-        order.setTimestamp(new Date());
         orderRepository.save(order);
 
         return new OrderResponse(order.getOrderCost() + order.getDeliveryCost(), order.getDeliveryTime());
@@ -82,10 +81,6 @@ public class OrderServiceImpl implements OrderService {
     private void updateProductStock(Product product, ProductRequest productRequest) {
         product.setQuantity(product.getQuantity() - productRequest.getQuantity());
         productRepository.save(product);
-    }
-
-    private double calculateProductCost(Product product, int quantity) {
-        return product.getPrice() * quantity;
     }
 
     private OrderProduct createOrderProduct(ProductRequest productRequest) {
