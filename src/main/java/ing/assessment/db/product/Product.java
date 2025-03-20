@@ -14,6 +14,10 @@ public class Product {
     @EmbeddedId
     private ProductCK productCk;
 
+    @Version
+    @Column(nullable = false, columnDefinition = "INT DEFAULT 0")
+    private long version = 0;
+
     private String name;
     private Double price;
     private Integer quantity;

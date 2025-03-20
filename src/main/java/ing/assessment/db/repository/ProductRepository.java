@@ -6,9 +6,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, ProductCK> {
     List<Product> findByProductCk_Id(Integer id);
-    Product findByProductCk(ProductCK productCk);
+    Optional<Product> findByProductCk(ProductCK productCk);
 }

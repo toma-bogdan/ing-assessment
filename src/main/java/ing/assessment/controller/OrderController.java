@@ -14,7 +14,7 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping
-    public ResponseEntity<?> placeOrder(@RequestBody List<ProductRequest> productRequests) {
+    public ResponseEntity<?> placeOrder(@RequestBody List<ProductRequest> productRequests) throws Exception {
         orderService.placeOrder(productRequests);
         return ResponseEntity.ok().build();
     }

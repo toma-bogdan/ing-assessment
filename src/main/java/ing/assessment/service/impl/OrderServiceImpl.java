@@ -10,11 +10,9 @@ import ing.assessment.service.OrderService;
 import ing.assessment.service.dto.ProductRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -47,16 +45,25 @@ public class OrderServiceImpl implements OrderService {
 
 
     @Override
+    @Transactional
     public void placeOrder(List<ProductRequest> productRequests) {
         Order order = new Order();
         List<OrderProduct> orderProducts = new ArrayList<>();
         double orderCost = 0;
         for (ProductRequest productRequest : productRequests) {
-            Product product = productRepository.findByProductCk(productRequest.getProductCK());
-            orderCost += product.getPrice() * productRequest.getQuantity();
+            Product product = productRepository
+                    .findByProductCk(productRequest.getProductCK())
+                    .orElseThrow(() -> new NoSuchElementException("Product not found for ProductCK: "
+                            + productRequest.getProductCK()));
+
             if (product.getQuantity() < productRequest.getQuantity()){
-                // throw error
+                throw new IllegalArgumentException("Stock quantity is less than requested quantity for ProductCK:"
+                        + productRequest.getProductCK());
             }
+            product.setQuantity(product.getQuantity() - productRequest.getQuantity());
+            productRepository.save(product);
+
+            orderCost += product.getPrice() * productRequest.getQuantity();
             orderProducts.add(new OrderProduct(productRequest.getProductCK().getId(), productRequest.getQuantity()));
         }
         order.setOrderCost(orderCost);
