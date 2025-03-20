@@ -70,6 +70,7 @@ public class OrderServiceImpl implements OrderService {
         order.setOrderProducts(orderProducts);
         order.setDeliveryTime(computeDeliveryTime(productRequests));
         computeOrderCost(order);
-//        orderRepository.save(order);
+        order.setTimestamp(new Date());
+        orderRepository.save(order);
     }
 }
