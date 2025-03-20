@@ -50,14 +50,14 @@ Access the following url: **http://localhost:8080/h2-console/**
 
 ### Ordering System
 - **Order Placement**
-   Users can create orders by specifying product id it's location and quantity.
+   Users can create orders by specifying product id, location and quantity.
 
 - **Stock Validation**
   Verifies if the requested product is in the database, and it's quantity is available.
 
 - **Compute discounts**
   Automatically applies discounts to orders exceeding the configured thresholds.
-- 
+
 - **Delivery Cost Management**
   Using java streams, all product locations are being mapped and for each distinct one,
   2 days are added to delivery time
@@ -66,7 +66,7 @@ Access the following url: **http://localhost:8080/h2-console/**
  Supports optimistic locking preventing race conditions on accessing product quantities
 
 - **Error Handling**
-- Returns appropriate HTTP status codes for invalid requests.
-- Provides user-friendly error messages for issues such as invalid product IDs, insufficient stock, or malformed requests.
+ Returns appropriate HTTP status codes for invalid requests.
+ Provides user-friendly error messages for issues such as invalid product IDs, insufficient stock, or malformed requests.
 
 
