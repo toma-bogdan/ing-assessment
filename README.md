@@ -37,7 +37,7 @@ Access the following url: **http://localhost:8080/h2-console/**
           {
             "productCK": {
               "id": 1,
-              "location": "MUNCHEN"
+              "location": "MUNICH"
             },
             "quantity": 3
           }
